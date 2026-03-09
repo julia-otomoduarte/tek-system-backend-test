@@ -1,13 +1,90 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "mongodb"
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Product {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  sku         String   @unique
+  name        String
+  description String
+  price       Float
+  stock       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("products")
+}
+
+type Address {
+  zipCode      String
+  street       String
+  number       String
+  neighborhood String
+  city         String
+  state        String
+}
+
+model Customer {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  name  String
+  email     String    @unique
+  phone     String
+  document  String    @unique
+  address   Address
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  orders    Order[]
+
+  @@map("customers")
+}
+
+type OrderItem {
+  productId   String @db.ObjectId
+  productName String
+  sku         String
+  quantity    Int
+  unitPrice   Float
+}
+
+enum OrderStatus {
+  DRAFT
+  PENDING
+  COMPLETED
+  CANCELED
+}
+
+model Order {
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  orderNumber String      @unique
+  customerId  String      @db.ObjectId
+  customer    Customer    @relation(fields: [customerId], references: [id])
+  items       OrderItem[]
+  total       Float       @default(0)
+  status      OrderStatus @default(DRAFT)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@map("orders")
+}
+
+model OrderCounter {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  counter Int    @default(0)
+
+  @@map("order_counters")
 }
