@@ -87,4 +87,22 @@ export class AuthService {
       user: { id: user.id, email: user.email, name: user.name },
     };
   }
+
+  async refreshTokens(userId: string, email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Usuário não encontrado');
+    }
+
+    const payload = { sub: user.id, email: user.email };
+    const tokens = this.generateTokens(payload);
+
+    return {
+      ...tokens,
+      user: { id: user.id, email: user.email, name: user.name },
+    };
+  }
 }
