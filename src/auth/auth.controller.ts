@@ -22,6 +22,6 @@ export class AuthController {
   @Post('refresh')
   @UseGuards(JwtRefreshGuard)
   refresh(@CurrentUser() user: { id: string; email: string }) {
-    return this.authService.refreshTokens(user.id, user.email);
+    return this.authService.refreshTokens(user.id);
   }
 }
