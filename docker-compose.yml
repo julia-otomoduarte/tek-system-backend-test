@@ -5,6 +5,7 @@ services:
     image: mongo:7
     container_name: tek-mongodb
     restart: unless-stopped
+    command: mongod --logpath /dev/null
     ports:
       - '27017:27017'
     environment:
