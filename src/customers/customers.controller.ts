@@ -7,16 +7,18 @@ import {
   Body,
   Param,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { CustomersService } from './customers.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { ListCustomersDto } from './dto/list-customers.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('customers')
 export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}
-
   @Get()
   getAllCustomers(@Query() filters: ListCustomersDto) {
     return this.customersService.getAllCustomers(filters);
