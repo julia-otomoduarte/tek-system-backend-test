@@ -22,7 +22,7 @@ services:
 
   web:
     build: .
-    container_name: tek-api
+    container_name: web
     restart: always
     command: sh -c "yarn start:prod"
     env_file:
