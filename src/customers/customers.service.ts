@@ -155,11 +155,11 @@ export class CustomersService {
       throw new Error('Cliente não encontrado');
     }
 
-    const ordersCount = await this.prisma.order.count({
+    const existingOrder = await this.prisma.order.findFirst({
       where: { customerId: id },
     });
 
-    if (ordersCount > 0) {
+    if (existingOrder) {
       throw new Error(
         'Cliente possui pedidos cadastrados e não pode ser deletado',
       );
