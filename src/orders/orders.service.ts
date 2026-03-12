@@ -204,9 +204,38 @@ export class OrdersService {
       );
     }
 
-    return this.prisma.order.update({
-      where: { id },
-      data: { status: data.status },
+    const items = order.items as any[];
+
+    const shouldDecrementStock =
+      order.status === 'DRAFT' &&
+      (data.status === 'PENDING' || data.status === 'COMPLETED');
+
+    const shouldRevertStock =
+      order.status === 'PENDING' && data.status === 'CANCELED';
+
+    return this.prisma.$transaction(async (tx) => {
+      if (shouldDecrementStock) {
+        for (const item of items) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { stock: { decrement: item.quantity } },
+          });
+        }
+      }
+
+      if (shouldRevertStock) {
+        for (const item of items) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { stock: { increment: item.quantity } },
+          });
+        }
+      }
+
+      return tx.order.update({
+        where: { id },
+        data: { status: data.status },
+      });
     });
   }
 
