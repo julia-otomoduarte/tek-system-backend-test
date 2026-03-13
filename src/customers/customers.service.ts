@@ -1,4 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
@@ -21,7 +26,9 @@ export class CustomersService {
     try {
       validateDocument(customer_document);
     } catch (error) {
-      throw new Error(error instanceof Error ? error.message : String(error));
+      throw new BadRequestException(
+        error instanceof Error ? error.message : String(error),
+      );
     }
 
     const found_customer = await this.prisma.customer.findFirst({
@@ -36,13 +43,13 @@ export class CustomersService {
 
     if (found_customer) {
       if (found_customer.email === customer_email) {
-        throw new Error('Email de cliente já cadastrado');
+        throw new ConflictException('Email de cliente já cadastrado');
       }
       if (found_customer.document === treated_document) {
-        throw new Error('Documento de cliente já cadastrado');
+        throw new ConflictException('Documento de cliente já cadastrado');
       }
       if (found_customer.phone === treated_phone) {
-        throw new Error('Telefone de cliente já cadastrado');
+        throw new ConflictException('Telefone de cliente já cadastrado');
       }
     }
 
@@ -67,14 +74,16 @@ export class CustomersService {
       try {
         validateDocument(customer_document);
       } catch (error) {
-        throw new Error(error instanceof Error ? error.message : String(error));
+        throw new BadRequestException(
+          error instanceof Error ? error.message : String(error),
+        );
       }
     }
 
     const customer = await this.prisma.customer.findUnique({ where: { id } });
 
     if (!customer) {
-      throw new Error('Cliente não encontrado');
+      throw new NotFoundException('Cliente não encontrado');
     }
 
     const found_customer = await this.prisma.customer.findFirst({
@@ -90,13 +99,13 @@ export class CustomersService {
 
     if (found_customer) {
       if (found_customer.email === customer_email) {
-        throw new Error('Email de cliente já cadastrado');
+        throw new ConflictException('Email de cliente já cadastrado');
       }
       if (found_customer.document === treated_document) {
-        throw new Error('Documento de cliente já cadastrado');
+        throw new ConflictException('Documento de cliente já cadastrado');
       }
       if (found_customer.phone === treated_phone) {
-        throw new Error('Telefone de cliente já cadastrado');
+        throw new ConflictException('Telefone de cliente já cadastrado');
       }
     }
 
@@ -152,7 +161,7 @@ export class CustomersService {
     const customer = await this.prisma.customer.findUnique({ where: { id } });
 
     if (!customer) {
-      throw new Error('Cliente não encontrado');
+      throw new NotFoundException('Cliente não encontrado');
     }
 
     const existingOrder = await this.prisma.order.findFirst({
@@ -160,7 +169,7 @@ export class CustomersService {
     });
 
     if (existingOrder) {
-      throw new Error(
+      throw new ConflictException(
         'Cliente possui pedidos cadastrados e não pode ser deletado',
       );
     }

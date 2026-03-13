@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
@@ -21,7 +25,7 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new Error('Usuário não encontrado');
+      throw new NotFoundException('Usuário não encontrado');
     }
 
     return user;
@@ -34,7 +38,7 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new Error('Usuário não encontrado');
+      throw new NotFoundException('Usuário não encontrado');
     }
 
     return user;
@@ -44,7 +48,7 @@ export class UsersService {
     const user = await this.prisma.user.findUnique({ where: { id } });
 
     if (!user) {
-      throw new Error('Usuário não encontrado');
+      throw new NotFoundException('Usuário não encontrado');
     }
 
     if (dto.email) {
@@ -52,7 +56,9 @@ export class UsersService {
         where: { email: dto.email },
       });
       if (existing && existing.id !== id)
-        throw new Error('Email já registrado, por favor escolha outro');
+        throw new ConflictException(
+          'Email já registrado, por favor escolha outro',
+        );
     }
 
     const payload = { ...dto };
@@ -72,7 +78,7 @@ export class UsersService {
     const user = await this.prisma.user.findUnique({ where: { id } });
 
     if (!user) {
-      throw new Error('Usuário não encontrado');
+      throw new NotFoundException('Usuário não encontrado');
     }
 
     await this.prisma.user.delete({ where: { id } });

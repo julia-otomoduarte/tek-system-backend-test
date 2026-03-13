@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
@@ -60,7 +60,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new Error('Email já registrado, por favor escolha outro');
+      throw new ConflictException('Email já registrado, por favor escolha outro');
     }
 
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);

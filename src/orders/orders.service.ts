@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { ListOrderDto } from './dto/list-order.dto';
@@ -40,7 +44,7 @@ export class OrdersService {
     });
 
     if (!order) {
-      throw new Error('Pedido não encontrado');
+      throw new NotFoundException('Pedido não encontrado');
     }
     return order;
   }
@@ -71,7 +75,7 @@ export class OrdersService {
           where: { id: item.productId },
         });
         if (!product)
-          throw new Error(`Produto #${item.productId} não encontrado`);
+          throw new NotFoundException(`Produto #${item.productId} não encontrado`);
         productMap.set(item.productId, product);
       }
 
@@ -80,7 +84,7 @@ export class OrdersService {
           ?.quantity || 0) + item.quantity;
 
       if (totalQty > product.stock) {
-        throw new Error(
+        throw new BadRequestException(
           `Estoque insuficiente para o produto "${product.name}". Disponível: ${product.stock}`,
         );
       }
@@ -109,7 +113,7 @@ export class OrdersService {
     });
 
     if (!customer) {
-      throw new Error('Cliente não encontrado');
+      throw new NotFoundException('Cliente não encontrado');
     }
 
     const { orderItems, total } = await this.prepareOrderItemsPayload(items);
@@ -133,7 +137,7 @@ export class OrdersService {
     const order = await this.getOrderById(id);
 
     if (order.status === 'COMPLETED' || order.status === 'CANCELED') {
-      throw new Error(
+      throw new BadRequestException(
         'Apenas pedidos em rascunho ou pendentes podem ser editados',
       );
     }
@@ -146,7 +150,7 @@ export class OrdersService {
       });
 
       if (!customer) {
-        throw new Error('Cliente não encontrado');
+        throw new NotFoundException('Cliente não encontrado');
       }
     }
 
@@ -199,7 +203,7 @@ export class OrdersService {
 
     const allowed = allowedTransitions[order.status];
     if (!allowed.includes(data.status)) {
-      throw new Error(
+      throw new BadRequestException(
         `Não é possível alterar o status de ${order.status} para ${data.status}`,
       );
     }
@@ -243,7 +247,7 @@ export class OrdersService {
     const order = await this.getOrderById(id);
 
     if (order.status === 'COMPLETED' || order.status === 'CANCELED') {
-      throw new Error(
+      throw new BadRequestException(
         'Apenas pedidos em rascunho ou pendentes podem ser deletados',
       );
     }

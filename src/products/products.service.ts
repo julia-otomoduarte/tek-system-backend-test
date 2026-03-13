@@ -1,4 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ListProductsDto } from './dto/list-products.dto';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -27,7 +32,7 @@ export class ProductsService {
       where: { id },
     });
     if (!product) {
-      throw new Error('Produto não encontrado');
+      throw new NotFoundException('Produto não encontrado');
     }
     return product;
   }
@@ -36,11 +41,11 @@ export class ProductsService {
     const { sku, name, price, stock } = createProductDto;
 
     if (price <= 0) {
-      throw new Error('O preço unitário deve ser maior que zero');
+      throw new BadRequestException('O preço unitário deve ser maior que zero');
     }
 
     if (stock < 0) {
-      throw new Error('O estoque não pode ser negativo');
+      throw new BadRequestException('O estoque não pode ser negativo');
     }
 
     const existingProduct = await this.prisma.product.findUnique({
@@ -48,7 +53,7 @@ export class ProductsService {
     });
 
     if (existingProduct) {
-      throw new Error('SKU de produto já cadastrado');
+      throw new ConflictException('SKU de produto já cadastrado');
     }
 
     const existingName = await this.prisma.product.findFirst({
@@ -56,7 +61,7 @@ export class ProductsService {
     });
 
     if (existingName) {
-      throw new Error('Nome de produto já cadastrado');
+      throw new ConflictException('Nome de produto já cadastrado');
     }
 
     return this.prisma.product.create({
@@ -70,17 +75,17 @@ export class ProductsService {
     });
 
     if (!product) {
-      throw new Error('Produto não encontrado');
+      throw new NotFoundException('Produto não encontrado');
     }
 
     const { sku, name, price, stock } = updateProductDto;
 
     if (price !== undefined && price <= 0) {
-      throw new Error('O preço unitário deve ser maior que zero');
+      throw new BadRequestException('O preço unitário deve ser maior que zero');
     }
 
     if (stock !== undefined && stock < 0) {
-      throw new Error('O estoque não pode ser negativo');
+      throw new BadRequestException('O estoque não pode ser negativo');
     }
 
     if (sku) {
@@ -89,7 +94,7 @@ export class ProductsService {
       });
 
       if (existingProduct && existingProduct.id !== id) {
-        throw new Error('SKU de produto já cadastrado');
+        throw new ConflictException('SKU de produto já cadastrado');
       }
     }
 
@@ -99,7 +104,7 @@ export class ProductsService {
       });
 
       if (existingName && existingName.id !== id) {
-        throw new Error('Nome de produto já cadastrado');
+        throw new ConflictException('Nome de produto já cadastrado');
       }
     }
 
@@ -115,7 +120,7 @@ export class ProductsService {
     });
 
     if (!product) {
-      throw new Error('Produto não encontrado');
+      throw new NotFoundException('Produto não encontrado');
     }
 
     return this.prisma.product.delete({
