@@ -2,12 +2,12 @@ import {
   Controller,
   Get,
   Post,
-  Put,
   Delete,
   Body,
   Param,
   Query,
   UseGuards,
+  Patch,
 } from '@nestjs/common';
 import { CustomersService } from './customers.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
@@ -34,7 +34,7 @@ export class CustomersController {
     return this.customersService.createCustomer(createCustomerDto);
   }
 
-  @Put(':id')
+  @Patch(':id')
   updateCustomer(
     @Param('id') id: string,
     @Body() updateCustomerDto: UpdateCustomerDto,

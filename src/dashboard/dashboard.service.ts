@@ -26,7 +26,7 @@ export class DashboardService {
       aggregate: 'orders',
       pipeline: [
         { $match: { status: 'COMPLETED' } },
-        { $group: { _id: null, totalRevenue: { $sum: '$totalPrice' } } },
+        { $group: { _id: null, totalRevenue: { $sum: '$total' } } },
       ],
       cursor: {},
     });
@@ -78,7 +78,7 @@ export class DashboardService {
             sku: { $first: '$items.sku' },
             totalQuantity: { $sum: '$items.quantity' },
             totalValue: {
-              $sum: { $multiply: ['$items.quantity', '$items.price'] },
+              $sum: { $multiply: ['$items.quantity', '$items.unitPrice'] },
             },
           },
         },
