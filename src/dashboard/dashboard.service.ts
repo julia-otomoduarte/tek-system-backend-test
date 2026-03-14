@@ -1,6 +1,13 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+
+export interface TopSellingProduct {
+  productId: string;
+  productName: string;
+  sku: string;
+  totalQuantity: number;
+  totalValue: number;
+}
 
 @Injectable()
 export class DashboardService {
@@ -22,34 +29,24 @@ export class DashboardService {
   }
 
   async getTotalRevenue() {
-    const result = await this.prisma.$runCommandRaw({
-      aggregate: 'orders',
+    const result = await this.prisma.order.aggregateRaw({
       pipeline: [
         { $match: { status: 'COMPLETED' } },
         { $group: { _id: null, totalRevenue: { $sum: '$total' } } },
       ],
-      cursor: {},
     });
 
-    const cursor = (
-      result?.cursor as { firstBatch?: { totalRevenue?: number }[] }
-    )?.firstBatch;
-    return cursor && cursor.length > 0 ? cursor[0].totalRevenue : 0;
+    const rows = (result as unknown as { totalRevenue?: number }[]) ?? [];
+    return rows[0]?.totalRevenue ?? 0;
   }
 
   async getOrdersQuantityByStatus() {
-    const result = await this.prisma.$runCommandRaw({
-      aggregate: 'orders',
+    const rows = (await this.prisma.order.aggregateRaw({
       pipeline: [
         { $group: { _id: '$status', count: { $sum: 1 } } },
         { $project: { _id: 0, status: '$_id', count: 1 } },
       ],
-      cursor: {},
-    });
-
-    const counts =
-      (result?.cursor as { firstBatch?: { status: string; count: number }[] })
-        ?.firstBatch ?? [];
+    })) as unknown as { status: string; count: number }[];
 
     const statusCounts: Record<string, number> = {
       PENDING: 0,
@@ -58,7 +55,7 @@ export class DashboardService {
       DRAFT: 0,
     };
 
-    counts.forEach((item: { status: string; count: number }) => {
+    rows.forEach((item) => {
       statusCounts[item.status] = item.count;
     });
 
@@ -66,8 +63,7 @@ export class DashboardService {
   }
 
   async getTopFiveSellingProducts() {
-    const result = await this.prisma.$runCommandRaw({
-      aggregate: 'orders',
+    const topProducts = (await this.prisma.order.aggregateRaw({
       pipeline: [
         { $match: { status: 'COMPLETED' } },
         { $unwind: '$items' },
@@ -95,11 +91,7 @@ export class DashboardService {
           },
         },
       ],
-      cursor: {},
-    });
-
-    const topProducts =
-      (result?.cursor as { firstBatch?: any[] })?.firstBatch ?? [];
+    })) as unknown as TopSellingProduct[];
 
     return topProducts;
   }

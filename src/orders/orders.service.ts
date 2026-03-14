@@ -8,13 +8,20 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { ListOrderDto } from './dto/list-order.dto';
 import { UpdateOrderDto, UpdateOrderStatusDto } from './dto/update-order.dto';
 import { OrderItemDto } from './dto/order-item.dto';
+import { OrderItem, OrderStatus, Prisma, Product } from '@prisma/client';
+
+interface OrderUpdateData {
+  customerId?: string;
+  items?: OrderItem[];
+  total?: number;
+}
 
 @Injectable()
 export class OrdersService {
   constructor(private prisma: PrismaService) {}
 
   async getAllOrders(filter: ListOrderDto) {
-    const where: any = {};
+    const where: Prisma.OrderWhereInput = {};
 
     if (filter.orderNumber) {
       where.orderNumber = { contains: filter.orderNumber };
@@ -22,13 +29,13 @@ export class OrdersService {
     if (filter.customerId) {
       where.customerId = filter.customerId;
     }
-    if (filter.total_gte !== undefined || filter.total_lte !== undefined) {
+    if (filter.totalGte !== undefined || filter.totalLte !== undefined) {
       where.total = {};
-      if (filter.total_gte !== undefined) {
-        where.total.gte = filter.total_gte;
+      if (filter.totalGte !== undefined) {
+        where.total.gte = filter.totalGte;
       }
-      if (filter.total_lte !== undefined) {
-        where.total.lte = filter.total_lte;
+      if (filter.totalLte !== undefined) {
+        where.total.lte = filter.totalLte;
       }
     }
     if (filter.status) {
@@ -65,8 +72,8 @@ export class OrdersService {
   }
 
   private async prepareOrderItemsPayload(items: OrderItemDto[]) {
-    const orderItems = [];
-    const productMap = new Map<string, any>();
+    const orderItems: OrderItem[] = [];
+    const productMap = new Map<string, Product>();
 
     for (const item of items) {
       let product = productMap.get(item.productId);
@@ -75,7 +82,9 @@ export class OrdersService {
           where: { id: item.productId },
         });
         if (!product)
-          throw new NotFoundException(`Produto #${item.productId} não encontrado`);
+          throw new NotFoundException(
+            `Produto #${item.productId} não encontrado`,
+          );
         productMap.set(item.productId, product);
       }
 
@@ -126,7 +135,7 @@ export class OrdersService {
         customerId,
         total,
         items: orderItems,
-        status: 'DRAFT',
+        status: OrderStatus.DRAFT,
       },
       include: { customer: true },
     });
@@ -136,7 +145,14 @@ export class OrdersService {
   async updateOrder(id: string, data: UpdateOrderDto) {
     const order = await this.getOrderById(id);
 
-    if (order.status === 'COMPLETED' || order.status === 'CANCELED') {
+    if (!order) {
+      throw new NotFoundException('Pedido não encontrado');
+    }
+
+    if (
+      order.status === OrderStatus.COMPLETED ||
+      order.status === OrderStatus.CANCELED
+    ) {
       throw new BadRequestException(
         'Apenas pedidos em rascunho ou pendentes podem ser editados',
       );
@@ -154,12 +170,12 @@ export class OrdersService {
       }
     }
 
-    const updateData: any = {};
+    const updateData: OrderUpdateData = {};
 
-    if (customerId) updateData.customerId = customerId;
+    updateData.customerId = customerId;
 
     if (items) {
-      const existingItems: any[] = order.items as any[];
+      const existingItems: OrderItem[] = order.items as OrderItem[];
       const keptItems = [];
       const newItemDtos: OrderItemDto[] = [];
 
@@ -183,7 +199,7 @@ export class OrdersService {
 
       updateData.items = mergedItems;
       updateData.total = mergedItems.reduce(
-        (sum: number, i: any) => sum + i.unitPrice * i.quantity,
+        (sum: number, i: OrderItem) => sum + i.unitPrice * i.quantity,
         0,
       );
     }
@@ -194,11 +210,15 @@ export class OrdersService {
   async updateOrderStatus(id: string, data: UpdateOrderStatusDto) {
     const order = await this.getOrderById(id);
 
-    const allowedTransitions: Record<string, string[]> = {
-      DRAFT: ['PENDING', 'COMPLETED', 'CANCELED'],
-      PENDING: ['COMPLETED', 'CANCELED'],
-      COMPLETED: [],
-      CANCELED: [],
+    const allowedTransitions: Record<OrderStatus, OrderStatus[]> = {
+      [OrderStatus.DRAFT]: [
+        OrderStatus.PENDING,
+        OrderStatus.COMPLETED,
+        OrderStatus.CANCELED,
+      ],
+      [OrderStatus.PENDING]: [OrderStatus.COMPLETED, OrderStatus.CANCELED],
+      [OrderStatus.COMPLETED]: [],
+      [OrderStatus.CANCELED]: [],
     };
 
     const allowed = allowedTransitions[order.status];
@@ -208,14 +228,16 @@ export class OrdersService {
       );
     }
 
-    const items = order.items as any[];
+    const items = order.items as OrderItem[];
 
     const shouldDecrementStock =
-      order.status === 'DRAFT' &&
-      (data.status === 'PENDING' || data.status === 'COMPLETED');
+      order.status === OrderStatus.DRAFT &&
+      (data.status === OrderStatus.PENDING ||
+        data.status === OrderStatus.COMPLETED);
 
     const shouldRevertStock =
-      order.status === 'PENDING' && data.status === 'CANCELED';
+      order.status === OrderStatus.PENDING &&
+      data.status === OrderStatus.CANCELED;
 
     return this.prisma.$transaction(async (tx) => {
       if (shouldDecrementStock) {
@@ -246,7 +268,10 @@ export class OrdersService {
   async deleteOrder(id: string) {
     const order = await this.getOrderById(id);
 
-    if (order.status === 'COMPLETED' || order.status === 'CANCELED') {
+    if (
+      order.status === OrderStatus.COMPLETED ||
+      order.status === OrderStatus.CANCELED
+    ) {
       throw new BadRequestException(
         'Apenas pedidos em rascunho ou pendentes podem ser deletados',
       );
