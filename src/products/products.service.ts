@@ -14,14 +14,14 @@ export class ProductsService {
   constructor(private prisma: PrismaService) {}
 
   async getAllProducts(filters: ListProductsDto = {}) {
-    const { sku, name, price_gte, price_lte } = filters;
+    const { sku, name, priceGte, priceLte } = filters;
 
     return this.prisma.product.findMany({
       where: {
         ...(sku && { sku: { contains: sku } }),
         ...(name && { name: { contains: name, mode: 'insensitive' } }),
-        ...(price_gte !== undefined || price_lte !== undefined
-          ? { price: { gte: price_gte, lte: price_lte } }
+        ...(priceGte !== undefined || priceLte !== undefined
+          ? { price: { gte: priceGte, lte: priceLte } }
           : {}),
       },
     });

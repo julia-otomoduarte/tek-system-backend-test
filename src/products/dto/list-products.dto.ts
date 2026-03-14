@@ -14,11 +14,11 @@ export class ListProductsDto {
   @Type(() => Number)
   @IsNumber()
   @Min(0)
-  price_gte?: number;
+  priceGte?: number;
 
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(0)
-  price_lte?: number;
+  priceLte?: number;
 }
