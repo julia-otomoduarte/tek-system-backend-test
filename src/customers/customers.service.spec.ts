@@ -17,15 +17,15 @@ const mockPrisma = {
 };
 
 // CPF válido para testes: 529.982.247-25
-const VALID_CPF = '529.982.247-25';
+const validCpf = '529.982.247-25';
 // CNPJ válido para testes: 11.222.333/0001-81
-const VALID_CNPJ = '11.222.333/0001-81';
+const validCnpj = '11.222.333/0001-81';
 
 const makeCustomerDto = (overrides = {}) => ({
   name: 'Maria Silva',
   email: 'maria@email.com',
   phone: '(11) 91234-5678',
-  document: VALID_CPF,
+  document: validCpf,
   address: {
     street: 'Rua das Flores',
     number: '123',
@@ -65,7 +65,7 @@ describe('CustomersService', () => {
     it('deve criar cliente com sucesso usando CNPJ válido', async () => {
       mockPrisma.customer.findFirst.mockResolvedValue(null);
       const dto = makeCustomerDto({
-        document: VALID_CNPJ,
+        document: validCnpj,
         email: 'empresa@email.com',
         phone: '(11) 98765-4321',
       });

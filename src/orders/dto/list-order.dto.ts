@@ -12,11 +12,11 @@ export class ListOrderDto {
 
   @IsOptional()
   @IsNumber()
-  total_gte?: number;
+  totalGte?: number;
 
   @IsOptional()
   @IsNumber()
-  total_lte?: number;
+  totalLte?: number;
 
   @IsOptional()
   @IsEnum(OrderStatus)

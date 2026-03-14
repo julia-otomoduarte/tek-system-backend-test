@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { OrdersService } from './orders.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -101,7 +102,7 @@ describe('OrdersService', () => {
 
     it('deve filtrar por faixa de total', async () => {
       mockPrisma.order.findMany.mockResolvedValue([]);
-      await service.getAllOrders({ total_gte: 100, total_lte: 500 });
+      await service.getAllOrders({ totalGte: 100, totalLte: 500 });
       expect(mockPrisma.order.findMany).toHaveBeenCalledWith({
         where: { total: { gte: 100, lte: 500 } },
       });
@@ -145,7 +146,7 @@ describe('OrdersService', () => {
 
       mockPrisma.customer.findUnique.mockResolvedValue(customer);
       mockPrisma.product.findUnique.mockResolvedValue(product);
-      mockPrisma.$transaction.mockImplementation(async (fn) => {
+      mockPrisma.$transaction.mockImplementation((fn) => {
         const tx = makeTxMock();
         tx.orderCounter.findFirst.mockResolvedValue(null);
         tx.orderCounter.create.mockResolvedValue({ counter: 1 });

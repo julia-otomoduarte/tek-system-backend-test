@@ -16,39 +16,39 @@ export class CustomersService {
   constructor(private prisma: PrismaService) {}
 
   async createCustomer(createCustomerDto: CreateCustomerDto) {
-    const customer_email = createCustomerDto.email;
-    const customer_document = createCustomerDto.document;
-    const customer_phone = createCustomerDto.phone;
+    const customerEmail = createCustomerDto.email;
+    const customerDocument = createCustomerDto.document;
+    const customerPhone = createCustomerDto.phone;
 
-    const treated_phone = customer_phone.replace(/\D/g, '');
-    const treated_document = customer_document.replace(/\D/g, '');
+    const treatedPhone = customerPhone.replace(/\D/g, '');
+    const treatedDocument = customerDocument.replace(/\D/g, '');
 
     try {
-      validateDocument(customer_document);
+      validateDocument(customerDocument);
     } catch (error) {
       throw new BadRequestException(
         error instanceof Error ? error.message : String(error),
       );
     }
 
-    const found_customer = await this.prisma.customer.findFirst({
+    const foundCustomer = await this.prisma.customer.findFirst({
       where: {
         OR: [
-          { email: customer_email },
-          { document: treated_document },
-          { phone: treated_phone },
+          { email: customerEmail },
+          { document: treatedDocument },
+          { phone: treatedPhone },
         ],
       },
     });
 
-    if (found_customer) {
-      if (found_customer.email === customer_email) {
+    if (foundCustomer) {
+      if (foundCustomer.email === customerEmail) {
         throw new ConflictException('Email de cliente já cadastrado');
       }
-      if (found_customer.document === treated_document) {
+      if (foundCustomer.document === treatedDocument) {
         throw new ConflictException('Documento de cliente já cadastrado');
       }
-      if (found_customer.phone === treated_phone) {
+      if (foundCustomer.phone === treatedPhone) {
         throw new ConflictException('Telefone de cliente já cadastrado');
       }
     }
@@ -56,23 +56,23 @@ export class CustomersService {
     return this.prisma.customer.create({
       data: {
         ...createCustomerDto,
-        document: treated_document,
-        phone: treated_phone,
+        document: treatedDocument,
+        phone: treatedPhone,
       },
     });
   }
 
   async updateCustomer(id: string, updateCustomerDto: UpdateCustomerDto) {
-    const customer_email = updateCustomerDto.email;
-    const customer_document = updateCustomerDto.document;
-    const customer_phone = updateCustomerDto.phone;
+    const customerEmail = updateCustomerDto.email;
+    const customerDocument = updateCustomerDto.document;
+    const customerPhone = updateCustomerDto.phone;
 
-    const treated_phone = customer_phone?.replace(/\D/g, '');
-    const treated_document = customer_document?.replace(/\D/g, '');
+    const treatedPhone = customerPhone?.replace(/\D/g, '');
+    const treatedDocument = customerDocument?.replace(/\D/g, '');
 
-    if (customer_document) {
+    if (customerDocument) {
       try {
-        validateDocument(customer_document);
+        validateDocument(customerDocument);
       } catch (error) {
         throw new BadRequestException(
           error instanceof Error ? error.message : String(error),
@@ -86,25 +86,25 @@ export class CustomersService {
       throw new NotFoundException('Cliente não encontrado');
     }
 
-    const found_customer = await this.prisma.customer.findFirst({
+    const foundCustomer = await this.prisma.customer.findFirst({
       where: {
         id: { not: id },
         OR: [
-          { email: customer_email },
-          { document: treated_document },
-          { phone: treated_phone },
+          { email: customerEmail },
+          { document: treatedDocument },
+          { phone: treatedPhone },
         ],
       },
     });
 
-    if (found_customer) {
-      if (found_customer.email === customer_email) {
+    if (foundCustomer) {
+      if (foundCustomer.email === customerEmail) {
         throw new ConflictException('Email de cliente já cadastrado');
       }
-      if (found_customer.document === treated_document) {
+      if (foundCustomer.document === treatedDocument) {
         throw new ConflictException('Documento de cliente já cadastrado');
       }
-      if (found_customer.phone === treated_phone) {
+      if (foundCustomer.phone === treatedPhone) {
         throw new ConflictException('Telefone de cliente já cadastrado');
       }
     }
@@ -113,8 +113,8 @@ export class CustomersService {
       where: { id },
       data: {
         ...updateCustomerDto,
-        document: treated_document,
-        phone: treated_phone,
+        document: treatedDocument,
+        phone: treatedPhone,
       },
     });
   }

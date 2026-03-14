@@ -119,7 +119,7 @@ describe('ProductsService', () => {
     it('deve filtrar por faixa de preço', async () => {
       mockPrisma.product.findMany.mockResolvedValue([]);
 
-      await service.getAllProducts({ price_gte: 1000, price_lte: 5000 });
+      await service.getAllProducts({ priceGte: 1000, priceLte: 5000 });
 
       expect(mockPrisma.product.findMany).toHaveBeenCalledWith({
         where: { price: { gte: 1000, lte: 5000 } },
