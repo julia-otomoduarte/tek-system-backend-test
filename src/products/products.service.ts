@@ -14,17 +14,31 @@ export class ProductsService {
   constructor(private prisma: PrismaService) {}
 
   async getAllProducts(filters: ListProductsDto = {}) {
-    const { sku, name, priceGte, priceLte } = filters;
+    const { sku, name, priceGte, priceLte, page = 1, limit = 10 } = filters;
 
-    return this.prisma.product.findMany({
-      where: {
-        ...(sku && { sku: { contains: sku } }),
-        ...(name && { name: { contains: name, mode: 'insensitive' } }),
-        ...(priceGte !== undefined || priceLte !== undefined
-          ? { price: { gte: priceGte, lte: priceLte } }
-          : {}),
+    const where = {
+      ...(sku && { sku: { contains: sku } }),
+      ...(name && { name: { contains: name, mode: 'insensitive' as const } }),
+      ...(priceGte !== undefined || priceLte !== undefined
+        ? { price: { gte: priceGte, lte: priceLte } }
+        : {}),
+    };
+
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      this.prisma.product.findMany({ where, skip, take: limit }),
+      this.prisma.product.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
       },
-    });
+    };
   }
 
   async getProductById(id: string) {

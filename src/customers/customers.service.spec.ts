@@ -7,6 +7,7 @@ const mockPrisma = {
     findFirst: jest.fn(),
     findUnique: jest.fn(),
     findMany: jest.fn(),
+    count: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
@@ -138,38 +139,46 @@ describe('CustomersService', () => {
   });
 
   describe('getAllCustomers', () => {
-    it('deve retornar todos os clientes sem filtros', async () => {
+    it('deve retornar todos os clientes sem filtros com paginação padrão', async () => {
       const customers = [{ id: '1', name: 'Maria' }];
       mockPrisma.customer.findMany.mockResolvedValue(customers);
+      mockPrisma.customer.count.mockResolvedValue(1);
 
       const result = await service.getAllCustomers();
 
-      expect(mockPrisma.customer.findMany).toHaveBeenCalledWith({ where: {} });
-      expect(result).toEqual(customers);
+      expect(mockPrisma.customer.findMany).toHaveBeenCalledWith({ where: {}, skip: 0, take: 10 });
+      expect(result).toEqual({ data: customers, meta: { total: 1, page: 1, limit: 10, totalPages: 1 } });
     });
 
     it('deve filtrar por nome', async () => {
       mockPrisma.customer.findMany.mockResolvedValue([]);
+      mockPrisma.customer.count.mockResolvedValue(0);
 
       await service.getAllCustomers({ name: 'Maria' });
 
       expect(mockPrisma.customer.findMany).toHaveBeenCalledWith({
         where: { name: { contains: 'Maria', mode: 'insensitive' } },
+        skip: 0,
+        take: 10,
       });
     });
 
     it('deve filtrar por email', async () => {
       mockPrisma.customer.findMany.mockResolvedValue([]);
+      mockPrisma.customer.count.mockResolvedValue(0);
 
       await service.getAllCustomers({ email: 'maria@' });
 
       expect(mockPrisma.customer.findMany).toHaveBeenCalledWith({
         where: { email: { contains: 'maria@', mode: 'insensitive' } },
+        skip: 0,
+        take: 10,
       });
     });
 
     it('deve filtrar por cidade e estado', async () => {
       mockPrisma.customer.findMany.mockResolvedValue([]);
+      mockPrisma.customer.count.mockResolvedValue(0);
 
       await service.getAllCustomers({ city: 'São Paulo', state: 'SP' });
 
@@ -179,7 +188,19 @@ describe('CustomersService', () => {
             is: { city: { equals: 'São Paulo' }, state: { equals: 'SP' } },
           },
         },
+        skip: 0,
+        take: 10,
       });
+    });
+
+    it('deve respeitar page e limit informados', async () => {
+      mockPrisma.customer.findMany.mockResolvedValue([]);
+      mockPrisma.customer.count.mockResolvedValue(25);
+
+      const result = await service.getAllCustomers({ page: 2, limit: 5 });
+
+      expect(mockPrisma.customer.findMany).toHaveBeenCalledWith({ where: {}, skip: 5, take: 5 });
+      expect(result.meta).toEqual({ total: 25, page: 2, limit: 5, totalPages: 5 });
     });
   });
 
