@@ -142,10 +142,16 @@ Authorization: Bearer <access_token>
 }
 ```
 
-**Filtros GET `/customers`:**
+**Filtros e paginação GET `/customers` (query params):**
 
 ```
-?name=maria&email=@email&phone=11912345678&city=São Paulo&state=SP
+?name=maria&email=@email&phone=11912345678&city=São Paulo&state=SP&page=1&limit=10
+```
+
+**Resposta paginada:**
+
+```json
+{ "data": [...], "meta": { "total": 42, "page": 1, "limit": 10, "totalPages": 5 } }
 ```
 
 ---
@@ -172,6 +178,18 @@ Authorization: Bearer <access_token>
 }
 ```
 
+**Filtros e paginação GET `/products` (body):**
+
+```json
+{ "name": "Camiseta", "priceGte": 20, "priceLte": 100, "page": 1, "limit": 10 }
+```
+
+**Resposta paginada:**
+
+```json
+{ "data": [...], "meta": { "total": 80, "page": 1, "limit": 10, "totalPages": 8 } }
+```
+
 ---
 
 ### Pedidos — `/orders`
@@ -192,6 +210,18 @@ Authorization: Bearer <access_token>
   "customerId": "<id-do-cliente>",
   "items": [{ "productId": "<id-do-produto>", "quantity": 2 }]
 }
+```
+
+**Filtros e paginação GET `/orders` (body):**
+
+```json
+{ "status": "PENDING", "customerId": "<id>", "totalGte": 100, "page": 1, "limit": 10 }
+```
+
+**Resposta paginada:**
+
+```json
+{ "data": [...], "meta": { "total": 38, "page": 1, "limit": 10, "totalPages": 4 } }
 ```
 
 **Payload PATCH status:**

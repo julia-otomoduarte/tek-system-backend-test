@@ -19,6 +19,7 @@ const makeTxMock = () => ({
 const mockPrisma = {
   order: {
     findMany: jest.fn(),
+    count: jest.fn(),
     findUnique: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
@@ -74,46 +75,67 @@ describe('OrdersService', () => {
   });
 
   describe('getAllOrders', () => {
-    it('deve retornar todos os pedidos sem filtros', async () => {
+    it('deve retornar todos os pedidos sem filtros com paginação padrão', async () => {
       const orders = [makeOrder()];
       mockPrisma.order.findMany.mockResolvedValue(orders);
+      mockPrisma.order.count.mockResolvedValue(1);
 
       const result = await service.getAllOrders({});
 
-      expect(mockPrisma.order.findMany).toHaveBeenCalledWith({ where: {} });
-      expect(result).toEqual(orders);
+      expect(mockPrisma.order.findMany).toHaveBeenCalledWith({ where: {}, skip: 0, take: 10 });
+      expect(result).toEqual({ data: orders, meta: { total: 1, page: 1, limit: 10, totalPages: 1 } });
     });
 
     it('deve filtrar por orderNumber', async () => {
       mockPrisma.order.findMany.mockResolvedValue([]);
+      mockPrisma.order.count.mockResolvedValue(0);
       await service.getAllOrders({ orderNumber: 'TK-1' });
       expect(mockPrisma.order.findMany).toHaveBeenCalledWith({
         where: { orderNumber: { contains: 'TK-1' } },
+        skip: 0,
+        take: 10,
       });
     });
 
     it('deve filtrar por customerId', async () => {
       mockPrisma.order.findMany.mockResolvedValue([]);
+      mockPrisma.order.count.mockResolvedValue(0);
       await service.getAllOrders({ customerId: 'customer-1' });
       expect(mockPrisma.order.findMany).toHaveBeenCalledWith({
         where: { customerId: 'customer-1' },
+        skip: 0,
+        take: 10,
       });
     });
 
     it('deve filtrar por faixa de total', async () => {
       mockPrisma.order.findMany.mockResolvedValue([]);
+      mockPrisma.order.count.mockResolvedValue(0);
       await service.getAllOrders({ totalGte: 100, totalLte: 500 });
       expect(mockPrisma.order.findMany).toHaveBeenCalledWith({
         where: { total: { gte: 100, lte: 500 } },
+        skip: 0,
+        take: 10,
       });
     });
 
     it('deve filtrar por status', async () => {
       mockPrisma.order.findMany.mockResolvedValue([]);
+      mockPrisma.order.count.mockResolvedValue(0);
       await service.getAllOrders({ status: 'PENDING' as any });
       expect(mockPrisma.order.findMany).toHaveBeenCalledWith({
         where: { status: 'PENDING' },
+        skip: 0,
+        take: 10,
       });
+    });
+
+    it('deve respeitar page e limit informados', async () => {
+      mockPrisma.order.findMany.mockResolvedValue([]);
+      mockPrisma.order.count.mockResolvedValue(20);
+      const result = await service.getAllOrders({ page: 2, limit: 5 });
+      expect(mockPrisma.order.findMany).toHaveBeenCalledWith({ where: {}, skip: 5, take: 5 });
+      expect(result.meta).toEqual({ total: 20, page: 2, limit: 5, totalPages: 4 });
     });
   });
 

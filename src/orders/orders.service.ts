@@ -21,6 +21,7 @@ export class OrdersService {
   constructor(private prisma: PrismaService) {}
 
   async getAllOrders(filter: ListOrderDto) {
+    const { page = 1, limit = 10 } = filter;
     const where: Prisma.OrderWhereInput = {};
 
     if (filter.orderNumber) {
@@ -42,7 +43,21 @@ export class OrdersService {
       where.status = filter.status;
     }
 
-    return this.prisma.order.findMany({ where });
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      this.prisma.order.findMany({ where, skip, take: limit }),
+      this.prisma.order.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async getOrderById(id: string) {

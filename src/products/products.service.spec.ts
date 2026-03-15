@@ -7,6 +7,7 @@ const mockPrisma = {
     findUnique: jest.fn(),
     findFirst: jest.fn(),
     findMany: jest.fn(),
+    count: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
@@ -86,44 +87,64 @@ describe('ProductsService', () => {
   });
 
   describe('getAllProducts', () => {
-    it('deve retornar todos os produtos sem filtros', async () => {
+    it('deve retornar todos os produtos sem filtros com paginação padrão', async () => {
       const products = [{ id: '1', name: 'Notebook Dell' }];
       mockPrisma.product.findMany.mockResolvedValue(products);
+      mockPrisma.product.count.mockResolvedValue(1);
 
       const result = await service.getAllProducts();
 
-      expect(mockPrisma.product.findMany).toHaveBeenCalledWith({ where: {} });
-      expect(result).toEqual(products);
+      expect(mockPrisma.product.findMany).toHaveBeenCalledWith({ where: {}, skip: 0, take: 10 });
+      expect(result).toEqual({ data: products, meta: { total: 1, page: 1, limit: 10, totalPages: 1 } });
     });
 
     it('deve filtrar por SKU', async () => {
       mockPrisma.product.findMany.mockResolvedValue([]);
+      mockPrisma.product.count.mockResolvedValue(0);
 
       await service.getAllProducts({ sku: 'PROD' });
 
       expect(mockPrisma.product.findMany).toHaveBeenCalledWith({
         where: { sku: { contains: 'PROD' } },
+        skip: 0,
+        take: 10,
       });
     });
 
     it('deve filtrar por nome', async () => {
       mockPrisma.product.findMany.mockResolvedValue([]);
+      mockPrisma.product.count.mockResolvedValue(0);
 
       await service.getAllProducts({ name: 'Notebook' });
 
       expect(mockPrisma.product.findMany).toHaveBeenCalledWith({
         where: { name: { contains: 'Notebook', mode: 'insensitive' } },
+        skip: 0,
+        take: 10,
       });
     });
 
     it('deve filtrar por faixa de preço', async () => {
       mockPrisma.product.findMany.mockResolvedValue([]);
+      mockPrisma.product.count.mockResolvedValue(0);
 
       await service.getAllProducts({ priceGte: 1000, priceLte: 5000 });
 
       expect(mockPrisma.product.findMany).toHaveBeenCalledWith({
         where: { price: { gte: 1000, lte: 5000 } },
+        skip: 0,
+        take: 10,
       });
+    });
+
+    it('deve respeitar page e limit informados', async () => {
+      mockPrisma.product.findMany.mockResolvedValue([]);
+      mockPrisma.product.count.mockResolvedValue(30);
+
+      const result = await service.getAllProducts({ page: 3, limit: 5 });
+
+      expect(mockPrisma.product.findMany).toHaveBeenCalledWith({ where: {}, skip: 10, take: 5 });
+      expect(result.meta).toEqual({ total: 30, page: 3, limit: 5, totalPages: 6 });
     });
   });
 

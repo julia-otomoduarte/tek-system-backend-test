@@ -120,6 +120,7 @@ export class CustomersService {
   }
 
   async getAllCustomers(filters: ListCustomersDto = {}) {
+    const { page = 1, limit = 10 } = filters;
     const where: Prisma.CustomerWhereInput = {};
 
     if (filters.name) {
@@ -145,7 +146,21 @@ export class CustomersService {
       where.address = { is: addressFilter };
     }
 
-    return this.prisma.customer.findMany({ where });
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      this.prisma.customer.findMany({ where, skip, take: limit }),
+      this.prisma.customer.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async getCustomerById(id: string) {
