@@ -43,16 +43,7 @@ cp .env.example .env
 
 Edite o `.env` e substitua os valores de `JWT_SECRET` e `JWT_REFRESH_SECRET`.
 
-### 3. Gere o mongo-keyfile
-
-O MongoDB Replica Set exige uma chave compartilhada para autenticação interna entre os nós. Gere o arquivo antes de subir os containers:
-
-```bash
-openssl rand -base64 756 > mongo-keyfile
-chmod 400 mongo-keyfile
-```
-
-### 4. Suba os containers
+### 3. Suba os containers
 
 ```bash
 docker compose up --build -d
@@ -63,7 +54,7 @@ Isso irá iniciar:
 - `tek-mongodb` — MongoDB com Replica Set
 - `web` — API NestJS em `http://localhost:3000`
 
-### 5. Execute os testes
+### 4. Execute os testes
 
 ```bash
 docker compose exec web yarn test
@@ -215,7 +206,13 @@ Authorization: Bearer <access_token>
 **Filtros e paginação GET `/orders` (body):**
 
 ```json
-{ "status": "PENDING", "customerId": "<id>", "totalGte": 100, "page": 1, "limit": 10 }
+{
+  "status": "PENDING",
+  "customerId": "<id>",
+  "totalGte": 100,
+  "page": 1,
+  "limit": 10
+}
 ```
 
 **Resposta paginada:**
