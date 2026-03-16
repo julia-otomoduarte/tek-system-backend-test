@@ -5,12 +5,12 @@ services:
     image: mongo:7
     container_name: tek-mongodb
     restart: unless-stopped
-    command: >
+    entrypoint: >
       bash -c "
-        cp /tmp/mongo-keyfile /etc/mongo-keyfile &&
+        openssl rand -base64 756 > /etc/mongo-keyfile &&
         chmod 400 /etc/mongo-keyfile &&
         chown mongodb:mongodb /etc/mongo-keyfile &&
-        mongod --replSet rs0 --keyFile /etc/mongo-keyfile --bind_ip_all --logpath /dev/null
+        exec docker-entrypoint.sh mongod --replSet rs0 --keyFile /etc/mongo-keyfile --bind_ip_all
       "
     ports:
       - '27017:27017'
@@ -20,20 +20,19 @@ services:
       MONGO_INITDB_DATABASE: tek_system
     volumes:
       - mongodb_data:/data/db
-      - ./mongo-keyfile:/tmp/mongo-keyfile:ro
     healthcheck:
       test: ['CMD', 'mongosh', '-u', 'user', '-p', 'password', '--authenticationDatabase', 'admin', '--eval', "try { rs.status().ok } catch(e) { rs.initiate().ok }"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 20s
+      start_period: 30s
 
   web:
     build:
       context: .
       dockerfile: Dockerfile.dev
     container_name: web
-    command: sh -c "nest build && yarn start:dev"
+    command: yarn start:dev
     env_file:
       - .env
     ports:
