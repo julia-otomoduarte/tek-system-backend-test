@@ -1,17 +1,40 @@
-version: '3.8'
-
 services:
+  mongo-keyfile-init:
+    image: mongo:7
+    restart: 'no'
+    logging:
+      driver: 'none'
+    command: >
+      bash -c '
+        if [ ! -s /keyfile/mongo-keyfile ]; then
+          openssl rand -base64 756 > /keyfile/mongo-keyfile;
+        fi;
+        chmod 400 /keyfile/mongo-keyfile;
+        chown 999:999 /keyfile/mongo-keyfile;
+      '
+    volumes:
+      - mongodb_keyfile:/keyfile
+
   mongodb:
     image: mongo:7
-    container_name: tek-mongodb
     restart: unless-stopped
-    entrypoint: >
-      bash -c "
-        openssl rand -base64 756 > /etc/mongo-keyfile &&
-        chmod 400 /etc/mongo-keyfile &&
-        chown mongodb:mongodb /etc/mongo-keyfile &&
-        exec docker-entrypoint.sh mongod --replSet rs0 --keyFile /etc/mongo-keyfile --bind_ip_all
-      "
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+    command:
+      [
+        'mongod',
+        '--replSet',
+        'rs0',
+        '--keyFile',
+        '/etc/mongo-keyfile/mongo-keyfile',
+        '--bind_ip_all',
+      ]
+    depends_on:
+      mongo-keyfile-init:
+        condition: service_completed_successfully
     ports:
       - '27017:27017'
     environment:
@@ -20,19 +43,70 @@ services:
       MONGO_INITDB_DATABASE: tek_system
     volumes:
       - mongodb_data:/data/db
+      - mongodb_keyfile:/etc/mongo-keyfile
     healthcheck:
-      test: ['CMD', 'mongosh', '-u', 'user', '-p', 'password', '--authenticationDatabase', 'admin', '--eval', "try { rs.status().ok } catch(e) { rs.initiate().ok }"]
+      test:
+        [
+          'CMD',
+          'mongosh',
+          '--host',
+          'localhost:27017',
+          '-u',
+          'user',
+          '-p',
+          'password',
+          '--authenticationDatabase',
+          'admin',
+          '--quiet',
+          '--eval',
+          'db.adminCommand({ ping: 1 }).ok === 1 && rs.status().ok === 1 ? quit(0) : quit(1)',
+        ]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 12
       start_period: 30s
+
+  mongo-init-replica:
+    image: mongo:7
+    depends_on:
+      mongodb:
+        condition: service_started
+    restart: 'no'
+    logging:
+      driver: 'none'
+    command: >
+      bash -c '
+        until mongosh --host mongodb:27017 -u user -p password --authenticationDatabase admin --quiet --eval "db.adminCommand({ ping: 1 }).ok"; do
+          sleep 2;
+        done;
+
+        mongosh --host mongodb:27017 -u user -p password --authenticationDatabase admin --quiet --eval "
+          try {
+            const status = rs.status();
+            if (status.ok === 1) {
+              print(\"Replica set already initialized\");
+              quit(0);
+            }
+          } catch (err) {
+            rs.initiate({ _id: \"rs0\", members: [{ _id: 0, host: \"mongodb:27017\" }] });
+            print(\"Replica set initialized\");
+            quit(0);
+          }
+
+          quit(1);
+        ";
+      '
 
   web:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    container_name: web
     command: yarn start:dev
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
     env_file:
       - .env
     ports:
@@ -43,6 +117,9 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
+      mongo-init-replica:
+        condition: service_completed_successfully
 
 volumes:
   mongodb_data:
+  mongodb_keyfile:
