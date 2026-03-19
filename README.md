@@ -22,7 +22,6 @@ API REST de **módulo de vendas e gestão de estoque**, desenvolvida como teste 
 ## Pré-requisitos
 
 - [Docker](https://www.docker.com/) e Docker Compose instalados
-- [OpenSSL](https://www.openssl.org/) (para gerar o mongo-keyfile)
 
 ---
 
@@ -43,16 +42,7 @@ cp .env.example .env
 
 Edite o `.env` e substitua os valores de `JWT_SECRET` e `JWT_REFRESH_SECRET`.
 
-### 3. Gere o mongo-keyfile
-
-O MongoDB Replica Set exige uma chave compartilhada para autenticação interna entre os nós. Gere o arquivo antes de subir os containers:
-
-```bash
-openssl rand -base64 756 > mongo-keyfile
-chmod 400 mongo-keyfile
-```
-
-### 4. Suba os containers
+### 3. Suba os containers
 
 ```bash
 docker compose up --build -d
@@ -60,13 +50,48 @@ docker compose up --build -d
 
 Isso irá iniciar:
 
-- `tek-mongodb` — MongoDB com Replica Set
+- `mongo-keyfile-init` — geração idempotente do keyfile do MongoDB
+- `mongodb` — MongoDB com Replica Set
+- `mongo-init-replica` — inicialização idempotente do Replica Set
 - `web` — API NestJS em `http://localhost:3000`
 
-### 5. Execute os testes
+### 4. Execute os testes
 
 ```bash
 docker compose exec web yarn test
+```
+
+### 5. Comandos para demo (logs limpos)
+
+Subida silenciosa e reproduzível:
+
+```bash
+docker compose up -d --build
+```
+
+Ver status dos serviços:
+
+```bash
+docker compose ps
+```
+
+Ver somente logs da API (evita ruído dos serviços de bootstrap):
+
+```bash
+docker compose logs -f web --tail=80
+```
+
+Logs do MongoDB quando necessário:
+
+```bash
+docker compose logs -f mongodb --tail=80
+```
+
+Reset completo do ambiente (útil antes da avaliação):
+
+```bash
+docker compose down -v --remove-orphans
+docker compose up -d --build
 ```
 
 ---
@@ -215,7 +240,13 @@ Authorization: Bearer <access_token>
 **Filtros e paginação GET `/orders` (body):**
 
 ```json
-{ "status": "PENDING", "customerId": "<id>", "totalGte": 100, "page": 1, "limit": 10 }
+{
+  "status": "PENDING",
+  "customerId": "<id>",
+  "totalGte": 100,
+  "page": 1,
+  "limit": 10
+}
 ```
 
 **Resposta paginada:**
