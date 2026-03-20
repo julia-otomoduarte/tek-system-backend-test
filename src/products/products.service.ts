@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ListProductsDto } from './dto/list-products.dto';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -14,15 +15,20 @@ export class ProductsService {
   constructor(private prisma: PrismaService) {}
 
   async getAllProducts(filters: ListProductsDto = {}) {
-    const { sku, name, priceGte, priceLte, page = 1, limit = 10 } = filters;
+    const { page = 1, limit = 10 } = filters;
+    const where: Prisma.ProductWhereInput = {};
 
-    const where = {
-      ...(sku && { sku: { contains: sku } }),
-      ...(name && { name: { contains: name, mode: 'insensitive' as const } }),
-      ...(priceGte !== undefined || priceLte !== undefined
-        ? { price: { gte: priceGte, lte: priceLte } }
-        : {}),
-    };
+    if (filters.sku) {
+      where.sku = { contains: filters.sku, mode: 'insensitive' };
+    }
+
+    if (filters.name) {
+      where.name = { contains: filters.name, mode: 'insensitive' };
+    }
+
+    if (filters.priceGte !== undefined || filters.priceLte !== undefined) {
+      where.price = { gte: filters.priceGte, lte: filters.priceLte };
+    }
 
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([

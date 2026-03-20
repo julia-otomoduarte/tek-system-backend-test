@@ -105,7 +105,7 @@ describe('ProductsService', () => {
       await service.getAllProducts({ sku: 'PROD' });
 
       expect(mockPrisma.product.findMany).toHaveBeenCalledWith({
-        where: { sku: { contains: 'PROD' } },
+        where: { sku: { contains: 'PROD', mode: 'insensitive' } },
         skip: 0,
         take: 10,
       });

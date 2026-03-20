@@ -203,10 +203,10 @@ Authorization: Bearer <access_token>
 }
 ```
 
-**Filtros e paginação GET `/products` (body):**
+**Filtros e paginação GET `/products` (query params):**
 
-```json
-{ "name": "Camiseta", "priceGte": 20, "priceLte": 100, "page": 1, "limit": 10 }
+```
+?name=Camiseta&priceGte=20&priceLte=100&page=1&limit=10
 ```
 
 **Resposta paginada:**
