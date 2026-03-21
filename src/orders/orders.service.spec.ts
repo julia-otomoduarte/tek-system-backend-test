@@ -91,7 +91,7 @@ describe('OrdersService', () => {
       mockPrisma.order.count.mockResolvedValue(0);
       await service.getAllOrders({ orderNumber: 'TK-1' });
       expect(mockPrisma.order.findMany).toHaveBeenCalledWith({
-        where: { orderNumber: { contains: 'TK-1' } },
+        where: { orderNumber: { contains: 'TK-1', mode: 'insensitive' } },
         skip: 0,
         take: 10,
       });

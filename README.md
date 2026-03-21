@@ -237,16 +237,10 @@ Authorization: Bearer <access_token>
 }
 ```
 
-**Filtros e paginação GET `/orders` (body):**
+**Filtros e paginação GET `/orders` (query params):**
 
-```json
-{
-  "status": "PENDING",
-  "customerId": "<id>",
-  "totalGte": 100,
-  "page": 1,
-  "limit": 10
-}
+```
+?status=PENDING&customerId=<id>&totalGte=100&page=1&limit=10
 ```
 
 **Resposta paginada:**

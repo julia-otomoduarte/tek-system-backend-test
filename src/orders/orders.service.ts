@@ -25,7 +25,7 @@ export class OrdersService {
     const where: Prisma.OrderWhereInput = {};
 
     if (filter.orderNumber) {
-      where.orderNumber = { contains: filter.orderNumber };
+      where.orderNumber = { contains: filter.orderNumber, mode: 'insensitive' };
     }
     if (filter.customerId) {
       where.customerId = filter.customerId;

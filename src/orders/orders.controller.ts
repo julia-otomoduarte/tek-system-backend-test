@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -25,7 +26,7 @@ export class OrdersController {
   }
 
   @Get()
-  async getAllOrders(@Body() filter: ListOrderDto) {
+  async getAllOrders(@Query() filter: ListOrderDto) {
     return this.ordersService.getAllOrders(filter);
   }
 

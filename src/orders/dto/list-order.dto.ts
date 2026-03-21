@@ -12,10 +12,12 @@ export class ListOrderDto {
   customerId?: string;
 
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   totalGte?: number;
 
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   totalLte?: number;
 
