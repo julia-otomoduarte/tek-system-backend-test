@@ -45,7 +45,12 @@ export class OrdersService {
 
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
-      this.prisma.order.findMany({ where, skip, take: limit }),
+      this.prisma.order.findMany({
+        where,
+        skip,
+        take: limit,
+        include: { customer: true },
+      }),
       this.prisma.order.count({ where }),
     ]);
 

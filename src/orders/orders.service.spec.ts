@@ -82,7 +82,7 @@ describe('OrdersService', () => {
 
       const result = await service.getAllOrders({});
 
-      expect(mockPrisma.order.findMany).toHaveBeenCalledWith({ where: {}, skip: 0, take: 10 });
+      expect(mockPrisma.order.findMany).toHaveBeenCalledWith({ where: {}, skip: 0, take: 10, include: { customer: true } });
       expect(result).toEqual({ data: orders, meta: { total: 1, page: 1, limit: 10, totalPages: 1 } });
     });
 
@@ -94,6 +94,7 @@ describe('OrdersService', () => {
         where: { orderNumber: { contains: 'TK-1', mode: 'insensitive' } },
         skip: 0,
         take: 10,
+        include: { customer: true },
       });
     });
 
@@ -105,6 +106,7 @@ describe('OrdersService', () => {
         where: { customerId: 'customer-1' },
         skip: 0,
         take: 10,
+        include: { customer: true },
       });
     });
 
@@ -116,6 +118,7 @@ describe('OrdersService', () => {
         where: { total: { gte: 100, lte: 500 } },
         skip: 0,
         take: 10,
+        include: { customer: true },
       });
     });
 
@@ -127,6 +130,7 @@ describe('OrdersService', () => {
         where: { status: 'PENDING' },
         skip: 0,
         take: 10,
+        include: { customer: true },
       });
     });
 
@@ -134,7 +138,7 @@ describe('OrdersService', () => {
       mockPrisma.order.findMany.mockResolvedValue([]);
       mockPrisma.order.count.mockResolvedValue(20);
       const result = await service.getAllOrders({ page: 2, limit: 5 });
-      expect(mockPrisma.order.findMany).toHaveBeenCalledWith({ where: {}, skip: 5, take: 5 });
+      expect(mockPrisma.order.findMany).toHaveBeenCalledWith({ where: {}, skip: 5, take: 5, include: { customer: true } });
       expect(result.meta).toEqual({ total: 20, page: 2, limit: 5, totalPages: 4 });
     });
   });
